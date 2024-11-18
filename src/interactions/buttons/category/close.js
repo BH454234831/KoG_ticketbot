@@ -67,8 +67,8 @@ module.exports = {
                   "color": 16711680,
                   "fields": [
                     {
-                      "name": "Ticket name",
-                      "value": interaction.channel.name,
+                      "name": "Category",
+                      "value": interaction.channel.parent.name,
                     },
                     {
                       "name": "Deleted by",
@@ -88,9 +88,9 @@ module.exports = {
                 embeds: [embed],
                 files: [filePath]
             });
+
             await interaction.channel.delete();
-            try {
-            client.threads.delete(interaction.channel.id) } catch(e){ console.log(e)}
+            console.log(client.threadinfo)
 			
             }
             else {

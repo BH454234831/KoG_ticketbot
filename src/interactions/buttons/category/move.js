@@ -26,27 +26,31 @@ module.exports = {
                 return interaction.reply({ ephemeral: true, content: "You can't do this" });
             }
 
-           
-            const regchannel = await interaction.guild.channels.cache.get(registration_id);
-            const gamechannel = await interaction.guild.channels.cache.get(ingame_id);
-            const refchannel = await interaction.guild.channels.cache.get(ref_id);
-            const otherchannel = await interaction.guild.channels.cache.get(other_id);
-            const changecannel = await interaction.guild.channels.cache.get(change_id);
-            const admingchannel = await interaction.guild.channels.cache.get(admin_id);
-            const categories = [regchannel, gamechannel, refchannel, otherchannel, changecannel, admingchannel]
+            await interaction.deferReply({ephemeral:true})
+		
+            let channelList = []
+            let categorylist = fs.readFileSync('categoires.json')
+            let categories = JSON.parse(categorylist)
+            
+            for (let category in categories)
+            {
+                
+                const channel = await interaction.guild.channels.cache.get(categories[category].channel);
+                channelList.push(channel)
+            }
             
             const selectMenu = new StringSelectMenuBuilder()
                 .setCustomId('select-category')
                 .setPlaceholder('Choose a category to move the thread to')
                 .addOptions(
-                    categories.map(category => ({
+                    channelList.map(category => ({
                         label: category.name,
                         value: category.id
                     }))
                 );
 
             const row = new ActionRowBuilder().addComponents(selectMenu);
-            await interaction.reply({ content: "Select a category to move the thread:", components: [row], ephemeral: true });
+            await interaction.editReply({ content: "Select a category to move the thread:", components: [row], ephemeral: true });
 
            
             const filter = i => i.customId === 'select-category' && i.user.id === interaction.user.id;
@@ -151,7 +155,8 @@ module.exports = {
                     })
                     }
                 }
-                if (selectedCategory.name == regchannel.name) {
+                category = categories.filter(function(categoires){return categoires.channel==selectedCategoryId})
+                if (category[0].autoDelete != 0) {
                     const timeout = setTimeout(async () => {
                         const messages = await movedthread.messages.fetch({ limit: 1 });
                         const lastMessage = messages.first();
@@ -231,10 +236,10 @@ module.exports = {
 							});
                             await movedthread.delete();
                         }
-                    }, 4 * 60 * 60 * 1000); // 4hours
+                    }, category[0].autoDelete * 60 * 1000);
 
                     const threadCollector = movedthread.createMessageCollector({
-                        time: 4 * 60 * 60 * 1000
+                        time: category[0].autoDelete * 60 * 1000
                     });
 
                     threadCollector.on('collect', (msg) => {

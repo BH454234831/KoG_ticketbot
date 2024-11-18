@@ -8,54 +8,41 @@ module.exports = {
 		try {
 		const {client} = interaction;
 		// buttons here
+		await interaction.deferReply({ephemeral:true})
 		
-		const registration = new ButtonBuilder()
-			.setCustomId('registration')
-			.setLabel('Регистрация')
-			.setStyle(ButtonStyle.Primary);
-
-		const ingame = new ButtonBuilder()
-			.setCustomId('ingame')
-			.setLabel('Внутриигровая жалоба')
-			.setStyle(ButtonStyle.Primary);
-
-		const change = new ButtonBuilder()
-			.setCustomId('change')
-			.setLabel('Изменить ник')
-			.setStyle(ButtonStyle.Primary);
-
-		const ref = new ButtonBuilder()
-			.setCustomId('ref')
-			.setLabel('ref<число>')
-			.setStyle(ButtonStyle.Primary);
-
-		const other = new ButtonBuilder()
-			.setCustomId('other')
-			.setLabel('Другое')
-			.setStyle(ButtonStyle.Primary);
-
-		const close = new ButtonBuilder()
-			.setCustomId('close')
-			.setLabel('Close')
-			.setStyle(ButtonStyle.Danger);
-
-
-		const move = new ButtonBuilder()
-		.setCustomId('move')
-		.setLabel('move to another category')
-		.setStyle(ButtonStyle.Primary);
+		let ticketTypes = []
+		let categorylist = fs.readFileSync('categoires.json')
+        let categories = JSON.parse(categorylist)
 		
-		const ticketType = new ActionRowBuilder()
-			.addComponents(registration,ingame,ref,other,change);
+		for (let category in categories)
+		{
+			
+			if (categories[category].isCreatable) {
+				const categorybutton = new ButtonBuilder()
+				.setCustomId(categories[category].channel)
+				.setLabel(categories[category].localisation[0])
+				.setStyle(ButtonStyle.Primary);
+				ticketTypes.push(categorybutton)
+			}
+		}
+		let rows = []
+		for (let i=0; i<ticketTypes.length;i++) {
+			if (i%5==0 || i == 0) {
+				const ticketType = new ActionRowBuilder()
+				rows.push(ticketType.addComponents(ticketTypes[i]))
+			}
+			else {
+				rows[rows.length-1].addComponents(ticketTypes[i])
+			}
+		}
 		
-		const ticketManagment = new ActionRowBuilder()
-		.addComponents(close,move);
-		const message = await interaction.reply({ephemeral: true, content: "Выберите категорию обращения", components: [ticketType],fetchReply: true})
-
+		const message = await interaction.editReply({ephemeral: true, content: "Выберите категорию обращения", components: rows, fetchReply: true})
+		
         const collector = message.createMessageComponentCollector({
             componentType: ComponentType.Button,
             time: 15000 // 15 seconds
         });
+
 		const embed = {
 			"title": "Ticket created",
 			"description": `Created by: <@${interaction.member.id}>`,
@@ -63,22 +50,33 @@ module.exports = {
 			"fields": [],
 			"timestamp": new Date
 		  }
-		
+		  const close = new ButtonBuilder()
+		  .setCustomId('close')
+		  .setLabel('Close')
+		  .setStyle(ButtonStyle.Danger);
+
+		  const move = new ButtonBuilder()
+		  .setCustomId('move')
+		  .setLabel('move to another category')
+		  .setStyle(ButtonStyle.Primary);
+
+	  	  const ticketManagment = new ActionRowBuilder()
+		  .addComponents(close,move);
 
 		collector.on('collect', async(i) => {
-			const threadCreate = async (channelId, prefix) => {
+			const threadCreate = async (channelId, deletion) => {
 				const channel = await interaction.guild.channels.fetch(channelId);
 				channel.permissionOverwrites.create(interaction.member, {
 					'ViewChannel': true
 				});
 
 				const thread = await channel.threads.create({
-					name: `ru-${prefix}-${interaction.member.displayName}`,
+					name: `ru-${interaction.member.displayName}`,
 					autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
 					type: ChannelType.PrivateThread,
 					invitable: false,
 				});
-
+				
 				await thread.members.add(interaction.member.id);
 				await thread.send({ embeds: [embed], components: [ticketManagment] });
 
@@ -89,8 +87,8 @@ module.exports = {
 				});
 
 				client.threads.set(thread.id, { createdBy: interaction.member.id });
-
-				if (prefix=="reg") {
+				console.log(deletion)
+				if (deletion!=0) {
 					const timeout = setTimeout(async () => {
 						
                         const messages = await thread.messages.fetch({ limit: 1 });
@@ -173,10 +171,10 @@ module.exports = {
 							console.log("deleted")
                             await thread.delete();
                         }
-                    }, 4 * 60 * 60 * 1000); // 4hours
+                    }, deletion * 60 * 1000); 
 
                     const threadCollector = thread.createMessageCollector({
-                        time: 4 * 60 * 60 * 1000
+                        time: deletion * 60 * 1000
                     });
 
                     threadCollector.on('collect', (msg) => {
@@ -188,23 +186,8 @@ module.exports = {
                     });
 				}
 			}
-			switch (i.customId) {
-				case 'registration':
-					await threadCreate(registration_id, 'reg');
-					break;
-				case 'ingame':
-					await threadCreate(ingame_id, 'game');
-					break;
-				case 'ref':
-					await threadCreate(ref_id, 'ref');
-					break;
-				case 'other':
-					await threadCreate(other_id, 'other');
-					break;
-				case 'change':
-				await threadCreate(change_id, 'nick');
-					break;
-			}
+			category = categories.filter(function(categoires){return categoires.channel==i.customId})
+			threadCreate(i.customId,category[0].autoDelete)
 			
 		})
 		collector.on('end', collected => {
@@ -214,8 +197,8 @@ module.exports = {
         });
 		}
 		
-		catch{
-			
+		catch (e){
+			console.log(e)
 		}
 	}
 };
