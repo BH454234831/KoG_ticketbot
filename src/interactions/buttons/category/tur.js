@@ -73,7 +73,7 @@ module.exports = {
 				});
 
 				const thread = await channel.threads.create({
-					name: `ru-${prefix}-${interaction.member.displayName}`,
+					name: `tur-${prefix}-${interaction.member.displayName}`,
 					autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
 					type: ChannelType.PrivateThread,
 					invitable: false,
