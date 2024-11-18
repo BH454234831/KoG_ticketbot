@@ -1,0 +1,14 @@
+{
+	"prefix": "!",
+	"token": "token",
+	"owner": "anyone123",
+	"client_id": "client_id",
+	"test_guild_id": "1161782643256471602",
+	"ref_id": "ref channel id",
+	"registration_id": "id",
+	"ingame_id": "id",
+	"other_id": "id",
+	"transcription_id": "id",
+	"admin_id": "id",
+	"change_id": "id"
+}
