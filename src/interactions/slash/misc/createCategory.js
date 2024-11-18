@@ -29,6 +29,7 @@ module.exports = {
 
 		
 	async execute(interaction) {
+        await interaction.deferReply()
         let categorylist = fs.readFileSync('categoires.json')
         let categories = JSON.parse(categorylist)
         const channel = await interaction.options.getChannel("channel")
@@ -37,10 +38,16 @@ module.exports = {
         const isCreatable = interaction.options.getInteger("notcreatable") ?? true
         const newCategory = {"channel": channel.id, "localisation": ["ru", localisation, "fr", "de", "tur"], "autoDelete": autodelete, "isCreatable": isCreatable} // next localisation use is [0] - ru, [1] - en, [2] - fr ...
         var count = Object.keys(categories).length;
+        category = categories.filter(function(categoires){return categoires.channel==channel.id})
+        console.log(category)
+        if (category[0]) {
+            await interaction.editReply({ephemeral: true, content: `This channel already used`})
+            return
+        }
         categories[count] = newCategory
         let data = categories
         console.log(data)
         fs.writeFileSync('categoires.json', JSON.stringify(data));
-        await interaction.reply({ephemeral: true, content: `Category added succesfuly, u can change localisation in categories.json file any time ru: en: fr: de: tur:`})
+        await interaction.editReply({ephemeral: true, content: `Category added succesfuly, u can change localisation in categories.json file any time ru: en: fr: de: tur:`})
     }
 }
