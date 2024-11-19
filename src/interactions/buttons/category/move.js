@@ -36,7 +36,8 @@ module.exports = {
             {
                 
                 const channel = await interaction.guild.channels.cache.get(categories[category].channel);
-                channelList.push(channel)
+                if(channel) {
+                channelList.push(channel) }
             }
             
             const selectMenu = new StringSelectMenuBuilder()
@@ -67,9 +68,7 @@ module.exports = {
                 let member = "";
                 try {
                     member = await interaction.guild.members.fetch(threadinfo.createdBy)
-                    channel.permissionOverwrites.create(member, {
-                        'ViewChannel': false
-                    })
+                    interaction.channel.parent.permissionOverwrites.delete(member)
                     }
                     catch(e)
                     {
@@ -81,6 +80,7 @@ module.exports = {
                                     const userIdMatch = embed.description.match(/<@(\d+)>/);
                                     if (userIdMatch) {
                                         member = await interaction.guild.members.fetch(userIdMatch[1]);
+                                        interaction.channel.parent.permissionOverwrites.delete(member)
                                         break; 
                                     }
                                 }
@@ -106,12 +106,12 @@ module.exports = {
                     }
                 });
 
-                
+                const prefix = interaction.channel.name.split('-')[0] ?? "err"
                 selectedCategory.permissionOverwrites.create(member, {
                     'ViewChannel': true
                 })
                 const movedthread = await selectedCategory.threads.create({
-                name: `ru-${selectedCategory.name}-${member.displayName}`,
+                name: `${prefix}-${member.displayName}`,
                 autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
                 type: ChannelType.PrivateThread,
                 invitable: false,
@@ -155,108 +155,119 @@ module.exports = {
                     })
                     }
                 }
-                category = categories.filter(function(categoires){return categoires.channel==selectedCategoryId})
-                if (category[0].autoDelete != 0) {
-                    const timeout = setTimeout(async () => {
-                        const messages = await movedthread.messages.fetch({ limit: 1 });
-                        const lastMessage = messages.first();
 
-                        if (!lastMessage || lastMessage.author.bot || !lastMessage.member.permissions.has('ManageThreads')) {
-							let messages = await movedthread.messages.fetch();
-							let contentMessages = messages.filter(msg => msg.content && msg.content.trim() !== "");
-								let allMessages = [];
-								for (const msg of contentMessages.values()) {
-								}
-								contentMessages.reverse().forEach(msg => {
-									allMessages.push([msg.author.tag+`(${msg.author.id}): `+ msg.content]);
-								});
-
-							const filePath = './channel-messages.txt';
-                            if (allMessages.length == 0) {
-								allMessages.push(["0 Messages in this ticket"]);
-							}
-							fs.writeFileSync(filePath, allMessages.join('\n'));
-
-							let member = ""
-							try {
-								member = await interaction.guild.members.fetch(threadinfo.createdBy)
-								channel.permissionOverwrites.create(member, {
-									'ViewChannel': false
-								})
-								}
-								catch(e)
-								{
-								   let messages = await movedthread.messages.fetch();
-								   let embedMessage;
-								   
-								   messages.some(msg => {
-					
-										if (msg.embeds.length > 0) {
-					
-											msg.embeds.forEach(embed => {
-					
-												if (embed.title == "Ticket created") {
-													const userIdMatch = embed.description.match(/<@(\d+)>/);
-													if (userIdMatch) {
-														member = {id: userIdMatch[1]};
-														embedMessage = msg; 
-													}
-												}
-											});
-										}
-									});
-								}
-
-							const closeembed = 
-								{
-								"title": "Ticket closed",
-								"color": 16711680,
-								"fields": [
-									{
-									"name": "Ticket name",
-									"value": movedthread.name,
-									},
-									{
-									"name": "Deleted by",
-									"value": `Automatic Deletion`,
-									"inline": false
-									},
-									{
-									"name": "Created by",
-									"value": `<@${member.id}>`,
-									"inline": false
-									}
-								],
-								"timestamp": new Date
-								}
-							const targetChannel = interaction.guild.channels.cache.get(transcription_id);
-							await targetChannel.send({
-								embeds: [closeembed],
-								files: [filePath]
-							});
-                            await movedthread.delete();
-                        }
-                    }, category[0].autoDelete * 60 * 1000);
-
-                    const threadCollector = movedthread.createMessageCollector({
-                        time: category[0].autoDelete * 60 * 1000
-                    });
-
-                    threadCollector.on('collect', (msg) => {
-                        if (msg.member.permissions.has('ManageThreads') && !msg.author.bot) {
-                            
-                            clearTimeout(timeout);
-                            threadCollector.stop();
-                        }
-                    });
-                }
-               
                 try {
                     client.threads.delete(interaction.channel.id);
                 } catch (e) {
                     console.error(e);
                 }
+
                 await interaction.channel.delete();
+                const languages = ["ru", "en" , "fr", "de", "tr"]
+
+                const language = languages.findIndex(element => element.includes(prefix))
+
+                category = categories.filter(function(categoires){return categoires.channel==selectedCategoryId})
+
+                if (category[0].hellomessage?.[language]) await movedthread.send({content: category[0].hellomessage[language]});
+
+                
+                
+                if (category[0].autoDelete == 0) return
+                    const timeout = setTimeout(async () => {
+                    const messages = await movedthread.messages.fetch({ limit: 1 });
+                    const lastMessage = messages.first();
+
+                    if (!lastMessage || lastMessage.author.bot || !lastMessage.member.permissions.has('ManageThreads')) {
+                        let messages = await movedthread.messages.fetch();
+                        let contentMessages = messages.filter(msg => msg.content && msg.content.trim() !== "");
+                            let allMessages = [];
+                            for (const msg of contentMessages.values()) {
+                            }
+                            contentMessages.reverse().forEach(msg => {
+                                allMessages.push([msg.author.tag+`(${msg.author.id}): `+ msg.content]);
+                            });
+
+                        const filePath = './channel-messages.txt';
+                        if (allMessages.length == 0) {
+                            allMessages.push(["0 Messages in this ticket"]);
+                        }
+                        fs.writeFileSync(filePath, allMessages.join('\n'));
+
+                        let member = ""
+                        try {
+                            member = await interaction.guild.members.fetch(threadinfo.createdBy)
+                            channel.permissionOverwrites.delete(member)
+                            }
+                            catch(e)
+                            {
+                                let messages = await movedthread.messages.fetch();
+                                let embedMessage;
+                                
+                                messages.some(msg => {
+                
+                                    if (msg.embeds.length > 0) {
+                
+                                        msg.embeds.forEach(embed => {
+                
+                                            if (embed.title == "Ticket created") {
+                                                const userIdMatch = embed.description.match(/<@(\d+)>/);
+                                                if (userIdMatch) {
+                                                    member = {id: userIdMatch[1]};
+                                                    embedMessage = msg; 
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+
+                        const closeembed = 
+                            {
+                            "title": "Ticket closed",
+                            "color": 16711680,
+                            "fields": [
+                                {
+                                "name": "Ticket category",
+                                "value": movedthread.parent.name,
+                                },
+                                {
+                                "name": "Deleted by",
+                                "value": `Automatic Deletion`,
+                                "inline": false
+                                },
+                                {
+                                "name": "Created by",
+                                "value": `<@${member.id}>`,
+                                "inline": false
+                                }
+                            ],
+                            "timestamp": new Date
+                            }
+                        const targetChannel = interaction.guild.channels.cache.get(transcription_id);
+                        await targetChannel.send({
+                            embeds: [closeembed],
+                            files: [filePath]
+                        });
+                        await movedthread.delete();
+                    }
+                }, category[0].autoDelete * 60 * 1000);
+
+                const threadCollector = movedthread.createMessageCollector({
+                    time: category[0].autoDelete * 60 * 1000
+                });
+
+                threadCollector.on('collect', (msg) => {
+                    if (msg.member.permissions.has('ManageThreads') && !msg.author.bot) {
+                        
+                        clearTimeout(timeout);
+                        threadCollector.stop();
+                    }
+                });
+                
+               
+                
+                
             });
 
             collector.on('end', collected => {

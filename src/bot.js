@@ -94,6 +94,21 @@ for (const module of selectMenus) {
 	}
 }
 
+// Registration of modals Interactions
+const modalCommands = fs.readdirSync("./interactions/modals");
+
+// Loop through all files and store modal-commands in modalCommands collection.
+
+for (const module of modalCommands) {
+	const commandFiles = fs
+		.readdirSync(`./interactions/modals/${module}`)
+		.filter((file) => file.endsWith(".js"));
+
+	for (const commandFile of commandFiles) {
+		const command = require(`./interactions/modals/${module}/${commandFile}`);
+		client.modalCommands.set(command.id, command);
+	}
+}
 // Registration of Slash-Commands in Discord API
 
 const rest = new REST({ version: "10" }).setToken(token);

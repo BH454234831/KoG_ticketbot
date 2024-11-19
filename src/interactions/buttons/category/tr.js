@@ -2,7 +2,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ThreadAutoArchiveDuration,
 const {ref_id,ingame_id,registration_id,other_id,transcription_id,change_id} = require("../../../config.json")
 const fs = require("fs")
 module.exports = {
-	id: "ru",
+	id: "tr",
 
 	async execute(interaction) {
 		try {
@@ -22,7 +22,7 @@ module.exports = {
 				if (channel) {
 				const categorybutton = new ButtonBuilder()
 				.setCustomId(categories[category].channel)
-				.setLabel(categories[category].localisation[0])
+				.setLabel(categories[category].localisation[4])
 				.setStyle(ButtonStyle.Primary);
 				ticketTypes.push(categorybutton) 
 				}
@@ -39,7 +39,7 @@ module.exports = {
 			}
 		}
 		
-		const message = await interaction.editReply({ephemeral: true, content: "Выберите категорию обращения", components: rows, fetchReply: true})
+		const message = await interaction.editReply({ephemeral: true, content: "Bir talep kategorisi seçin", components: rows, fetchReply: true})
 		
         const collector = message.createMessageComponentCollector({
             componentType: ComponentType.Button,
@@ -74,7 +74,7 @@ module.exports = {
 				});
 
 				const thread = await channel.threads.create({
-					name: `ru-${interaction.member.displayName}`,
+					name: `tr-${interaction.member.displayName}`,
 					autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
 					type: ChannelType.PrivateThread,
 					invitable: false,
@@ -90,7 +90,7 @@ module.exports = {
 				});
 
 				client.threads.set(thread.id, { createdBy: interaction.member.id });
-				if (category.hellomessage?.[0]) await thread.send({content: category.hellomessage[0]});
+				if (category.hellomessage?.[4]) await thread.send({content: category.hellomessage[4]});
 				if (category.autoDelete == 0) return
 
 				const timeout = setTimeout(async () => {
@@ -196,7 +196,7 @@ module.exports = {
 		})
 		collector.on('end', collected => {
             if (collected.size === 0) {
-                interaction.editReply({ content: "Время истекло. Вы не выбрали ни одной категории.", ephemeral: true, components: [] });
+                interaction.editReply({ content: "Süre doldu. Herhangi bir kategori seçmediniz", ephemeral: true, components: [] });
             }
         });
 		}

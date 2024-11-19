@@ -1,11 +1,12 @@
-const { ButtonStyle } = require('discord.js');
+const { ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder } = require("@discordjs/builders");
 module.exports = {
 	data: new SlashCommandBuilder() 
 		.setName("doticketbutton")
 		.setDescription(
 			"Do system ticket button"
-		),
+		)
+		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 		
 	async execute(interaction) {
@@ -31,7 +32,7 @@ module.exports = {
 		.setStyle(ButtonStyle.Primary)
 		.setEmoji({name: "🇩🇪"});
 		const tur = new ButtonBuilder()
-		.setCustomId('tur')
+		.setCustomId('tr')
 		.setLabel('Türkçe')
 		.setStyle(ButtonStyle.Primary)
 		.setEmoji({name: "🇹🇷"});

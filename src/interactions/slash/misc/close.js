@@ -1,8 +1,13 @@
-const { ChannelType } = require('discord.js');
+const { ChannelType, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {transcription_id} = require("../../../config.json")
 const fs = require("fs")
 module.exports = {
-	id: "close",
+	data: new SlashCommandBuilder()
+    .setName("close")
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageThreads)
+		.setDescription(
+			"close current ticket"
+		),
 
 	async execute(interaction) {
         try {
@@ -10,8 +15,6 @@ module.exports = {
             const targetChannel = interaction.guild.channels.cache.get(transcription_id);
             const {client} = interaction;
             const threadinfo = client.threads.get(interaction.channel.id)
-            const channel = await interaction.guild.channels.fetch(interaction.channel.parentId);
-            if (channel.permissionsFor(interaction.member).has('ManageThreads')) {
             
             let member = "";
             try {
@@ -91,13 +94,8 @@ module.exports = {
             console.log(client.threadinfo)
 			
             }
-            else {
-                interaction.reply({ephemeral:true, content:"You cant do this"})
-            } 
-            
-        }
-        catch (error) {
-            console.error(error);
+        catch (e) {
+            console.log(e)
         }
     }
 };  
