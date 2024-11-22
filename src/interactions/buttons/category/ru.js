@@ -1,6 +1,7 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ThreadAutoArchiveDuration, ComponentType, ChannelType, ChannelFlags, PermissionFlagsBits } = require('discord.js');
-const {ref_id,ingame_id,registration_id,other_id,transcription_id,change_id} = require("../../../config.json")
+const {transcription_id} = require("../../../config.json")
 const fs = require("fs")
+const discordTranscripts = require('discord-html-transcripts');
 module.exports = {
 	id: "ru",
 
@@ -144,7 +145,15 @@ module.exports = {
 							}
 						});
 					}
-
+					const attachment = await discordTranscripts.createTranscript(thread, {
+						limit: -1, // Max amount of messages to fetch. `-1` recursively fetches.
+						returnType: 'attachment', // Valid options: 'buffer' | 'string' | 'attachment' Default: 'attachment' OR use the enum ExportReturnType
+						filename: 'transcript.html', // Only valid with returnType is 'attachment'. Name of attachment.
+						saveImages: true, // Download all images and include the image data in the HTML (allows viewing the image even after it has been deleted) (! WILL INCREASE FILE SIZE !)
+						footerText: "Exported {number} message{s}", // Change text at footer, don't forget to put {number} to show how much messages got exported, and {s} for plural
+						poweredBy: false, // Whether to include the "Powered by discord-html-transcripts" footer
+						ssr: true // Whether to hydrate the html server-side
+					});
 					const closeEmbed = 
 						{
 						"title": "Ticket closed",
@@ -170,7 +179,7 @@ module.exports = {
 					const targetChannel = interaction.guild.channels.cache.get(transcription_id);
 					await targetChannel.send({
 						embeds: [closeEmbed],
-						files: [filePath]
+						files: [filePath, attachment]
 					});
 					console.log("deleted")
 					await thread.delete();

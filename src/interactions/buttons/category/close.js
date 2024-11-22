@@ -1,6 +1,7 @@
 const { ChannelType } = require('discord.js');
 const {transcription_id} = require("../../../config.json")
 const fs = require("fs")
+const discordTranscripts = require('discord-html-transcripts');
 module.exports = {
 	id: "close",
 
@@ -40,6 +41,15 @@ module.exports = {
                     }
                 });
             }
+            const attachment = await discordTranscripts.createTranscript(interaction.channel, {
+                limit: -1, // Max amount of messages to fetch. `-1` recursively fetches.
+                returnType: 'attachment', // Valid options: 'buffer' | 'string' | 'attachment' Default: 'attachment' OR use the enum ExportReturnType
+                filename: 'transcript.html', // Only valid with returnType is 'attachment'. Name of attachment.
+                saveImages: true, // Download all images and include the image data in the HTML (allows viewing the image even after it has been deleted) (! WILL INCREASE FILE SIZE !)
+                footerText: "Exported {number} message{s}", // Change text at footer, don't forget to put {number} to show how much messages got exported, and {s} for plural
+                poweredBy: false, // Whether to include the "Powered by discord-html-transcripts" footer
+                ssr: true // Whether to hydrate the html server-side
+            });
             let messages = await interaction.channel.messages.fetch();
             let contentMessages = messages.filter(msg => msg.content && msg.content.trim() !== "");
                 let allMessages = [];
@@ -84,7 +94,7 @@ module.exports = {
             
             await targetChannel.send({
                 embeds: [embed],
-                files: [filePath]
+                files: [filePath,attachment]
             });
 
             await interaction.channel.delete();
